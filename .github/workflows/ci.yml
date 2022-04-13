@@ -1,0 +1,32 @@
+name: Basic CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  dotnet-build-and-test-solution:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+    
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+        
+    - name: Dotnet Build & Test
+      run: make dotnet-test
+
+  docker-build-and-test-solution:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v2
+    
+    - name: Docker Build & Test
+      run: make docker-build

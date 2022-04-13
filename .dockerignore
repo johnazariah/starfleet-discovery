@@ -1,0 +1,13 @@
+**/.*/
+*.cmd
+*.ps1
+*.sln
+.*
+Makefile
+Dockerfile
+dev.sh
+**/bin/
+**/obj/
+**/out/
+**/node_modules/
+**/deploy/
