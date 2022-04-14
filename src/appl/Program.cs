@@ -48,32 +48,49 @@ namespace discovery.WebApi
 
         private static Dictionary<HealthStatus, int> healthResultStatusCodes = new Dictionary<HealthStatus, int>()
         {
-            [HealthStatus.Healthy  ] = StatusCodes.Status200OK,
-            [HealthStatus.Degraded ] = StatusCodes.Status200OK,
+            [HealthStatus.Healthy] = StatusCodes.Status200OK,
+            [HealthStatus.Degraded] = StatusCodes.Status200OK,
             [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
         };
 
         public static IHostBuilder ConfigureWebApi(this IHostBuilder hostBuilder) =>
-            hostBuilder.ConfigureWebHostDefaults(webHostBuilder => 
-                webHostBuilder.Configure((webHostBuilderContext, applicationBuilder) => {
+            hostBuilder.ConfigureWebHostDefaults(webHostBuilder =>
+                webHostBuilder
+                .Configure((webHostBuilderContext, applicationBuilder) =>
+                {
                     var hostEnv = webHostBuilderContext.HostingEnvironment;
-                    var swaggerUri = "./v1/swagger.json";
+                    var swaggerUri = "v1/swagger.json";
                     var swaggerName = $"{apiInfo.Title} {apiInfo.Version}";
 
                     var builder = hostEnv.IsDevelopment() ? applicationBuilder.UseDeveloperExceptionPage() : applicationBuilder;
                     if (useHttpsRedirection) builder.UseHttpsRedirection();
 
                     builder
-                        .UseFileServer(new FileServerOptions() {
+                        .UseFileServer(new FileServerOptions()
+                        {
                             FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
                             RequestPath = "",
                         })
-                        .UseSwagger()
+                        .UseSwagger(options =>
+                        {
+                            options.PreSerializeFilters.Add((swagger, httpReq) =>
+                            {
+                                if (httpReq.Headers.ContainsKey("X-Original-URL"))
+                                {
+                                    var originalUrlParts = httpReq.Headers["X-Original-URL"].ToString().Trim('/').Split("/");
+                                    var applicationName = originalUrlParts[0];
+                                    var deploymentName = originalUrlParts[1];
+                                    var serverUrl = $"https://{httpReq.Headers["X-Forwarded-Host"]}/{applicationName}/{deploymentName}";
+                                    swagger.Servers = new List<OpenApiServer> { new OpenApiServer { Url = serverUrl } };
+                                }
+                            });
+                        })
                         .UseSwaggerUI(options => options.SwaggerEndpoint(swaggerUri, swaggerName))
                         .UseResponseCompression()
                         .UseRouting()
                         .UseAuthorization()
-                        .UseEndpoints(endpoints => {
+                        .UseEndpoints(endpoints =>
+                        {
                             endpoints.MapControllers();
                             endpoints.MapHealthChecks(
                                 "/health",
@@ -83,16 +100,18 @@ namespace discovery.WebApi
                                     ResultStatusCodes = healthResultStatusCodes
                                 });
                         });
-                    })
-                    .UseSetting(WebHostDefaults.ApplicationKey, Assembly.GetEntryAssembly().GetName().Name))
-                .ConfigureServices((hostBuilderContext, services) => {
+                })
+                .UseSetting(WebHostDefaults.ApplicationKey, Assembly.GetEntryAssembly().GetName().Name))
+                .ConfigureServices((hostBuilderContext, services) =>
+                {
                     services
                         .AddControllers()
                         .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
                     var xmlFile = $"{Assembly.GetEntryAssembly().GetName().Name}.xml";
                     var xmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, xmlFile);
-                    services.AddSwaggerGen(options => {
+                    services.AddSwaggerGen(options =>
+                    {
                         options.SwaggerDoc(apiInfo.Version, apiInfo);
                         options.EnableAnnotations();
                         options.IncludeXmlComments(xmlPath);

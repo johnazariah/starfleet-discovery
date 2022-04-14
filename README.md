@@ -1,6 +1,7 @@
 # discovery
 
-![CI](https://github.com/_GITHUB_USER_/discovery/workflows/CI/badge.svg)
+![Build and Test](https://github.com/johnazariah/starfleet-discovery/actions/workflows/ci.yml/badge.svg)
+![Deploy to AKS](https://github.com/johnazariah/starfleet-discovery/actions/workflows/deploy-to-aks.yml/badge.svg)
 
 ## Tugboat Template
 

@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace discovery.Controllers
@@ -18,6 +20,12 @@ namespace discovery.Controllers
             Logger = logger;
         }
 
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [HttpGet(Name = "Headers")]
+        public virtual IEnumerable<string> Headers()
+        {
+            return from header in Request.Headers select $"{header.Key}: {header.Value}";
+        }
         public ILogger Logger { get; }
 
         /// <summary>
